@@ -35,6 +35,23 @@ LoRa offers, like sleep mode, receiving a single packet, optimizing current draw
 To actually read and display temperature, I used the Si7021 Honeywell module, and the JHD204a
 20x4 liquid crystal, controlling both with their own library I found online. 
 
+# Main application design
+I wish I did initialize this project with git when I started, because it really would be nice to look
+at how disorganized my code first seemed compared to how it is now (relatively, atleast).
+Receiver and Transmitter are separated under their own projects. 
+Transmitter and receiver both run a state machine and constantly check for LoRa commands from either side.
+Transmitter sends a metadata guarded buffer via LoRa to be decoded by receiver. The thermostat goes to sleep
+if no commands are received within a duration, the MCU goes to sleep 
+by employing STM32's STOP mode, turns off LCD backlight, and wakes up via external interrupts/every 50 seconds. 
+STOP mode was configured so as to save as much power as possible during moments of no operations, even though LoRa being in receive continuous mode 
+draws moderately more power, the MCU balances its own current draw by going to sleep. 
+
+Temperature is moderated using a 'deadzone' mechanic so as to prevent rapid cool/heat furnace mode which could cause issues. If temperature
+is set to cool or heat, but below/above its setpoint, it waits till it crosses setpoint plus or minus its deadzone, then
+only it turns on either heat or ac. For the small duration it wakes up, it sends current temperature data back to transmitter,
+making sure both modules are in sync. This design philosophy was inspired by observing my current Honeywell thermostat.
+
+
 # PCB/Schematic Design
 This portion took pretty much 60% of the total project time. It was my first introduction to 
 pcb design and I wanted to be absolutely 100% sure that I wouldn't mess anything up (due to 
